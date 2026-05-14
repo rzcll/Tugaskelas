@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daftar Tugas Kelas Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'], }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #cbd5e1; /* Light Grey background */ }
+        
+        /* Ultra Dark Shadow untuk efek melayang nyata */
+        .deep-dark-shadow {
+            box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.3), 
+                        0 8px 15px -5px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Header kaca transparan dengan efek blur tinggi */
+        .glass-header {
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Fix untuk kalender Flatpickr agar tidak terpotong */
+        .flatpickr-calendar { 
+            z-index: 100000 !important; 
+            width: 320px !important; 
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
+            border: none !important;
+            border-radius: 16px !important;
+        }
+        .flatpickr-innerContainer, .flatpickr-days { overflow: visible !important; width: auto !important; }
+        .dayContainer { display: flex !important; flex-wrap: wrap !important; width: 100% !important; min-width: 100% !important; max-width: 100% !important; justify-content: space-around !important; }
+        .flatpickr-day { flex-basis: 14% !important; max-width: 14% !important; margin: 0 !important; font-weight: 600; color: #475569; }
+        .flatpickr-day.nextMonthDay, .flatpickr-day.prevMonthDay { color: #cbd5e1 !important; font-weight: 400; }
+        .hari-libur { background-color: #ffe4e6 !important; color: #e11d48 !important; font-weight: bold; border-radius: 8px; }
+        .hari-minggu { color: #e11d48 !important; font-weight: bold; }
+        
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="text-slate-800 antialiased hide-scrollbar">
+
+    <nav class="glass-header sticky top-0 z-40 w-full px-4 md:px-8 py-4 transition-all duration-300">
+        <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
+            <!-- Logo -->
+            <div class="flex items-center gap-3 shrink-0">
+                <div class="w-10 h-10 bg-white rounded-xl deep-dark-shadow flex items-center justify-center text-indigo-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                </div>
+                <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-700 to-purple-700 hidden sm:block">Tugas<span class="text-slate-800">Kelas</span></h1>
+            </div>
+
+            <!-- Search Bar Minimalis-->
+            <div class="flex-1 max-w-xl relative group flex justify-center">
+                <div class="absolute inset-y-0 left-0 md:left-4 pl-4 flex items-center pointer-events-none">
+                    <svg class="w-5 h-5 text-slate-400 group-focus-within:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </div>
+                <!-- Input search dengan border biru muda -->
+                <input type="text" id="searchInput" placeholder="Cari tugas, mapel, atau guru..." class="w-full md:w-11/12 pl-11 pr-4 py-2.5 text-slate-800 rounded-full text-sm font-medium transition-all bg-white/80 border border-blue-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-400 placeholder-slate-400 shadow-sm" oninput="filterTasks()">
+            </div>
+
+            <!-- Aksi Kanan -->
+            <div class="flex items-center gap-3 shrink-0">
+                <!-- Lonceng Notif -->
+                <button onclick="openNotifModal()" class="relative p-2.5 bg-white rounded-full deep-dark-shadow transition-transform active:scale-95 text-slate-600">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                    <span id="notifBadge" class="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-rose-600 text-[10px] font-bold text-white shadow-lg hidden">0</span>
+                </button>
+                <!-- Gerigi Admin -->
+                <button onclick="openAdminGate()" class="p-2.5 bg-white text-slate-600 rounded-full deep-dark-shadow transition-transform active:scale-95">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 md:px-8 py-8 w-full">
+        <!-- Statistik Dashboard dengan Teks Berwarna -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div class="bg-white rounded-2xl p-5 deep-dark-shadow flex flex-col justify-center items-center">
+                <p class="text-xs text-slate-500 font-bold uppercase tracking-widest mb-1">Total Tugas</p>
+                <p class="text-3xl font-black text-emerald-500" id="statTotal">0</p>
+            </div>
+            <div class="bg-white rounded-2xl p-5 deep-dark-shadow flex flex-col justify-center items-center">
+                <p class="text-xs text-slate-500 font-bold uppercase tracking-widest mb-1">Tugas H-1</p>
+                <p class="text-3xl font-black text-amber-500" id="statUrgent">0</p>
+            </div>
+            <div class="bg-white rounded-2xl p-5 deep-dark-shadow flex flex-col justify-center items-center">
+                <p class="text-xs text-slate-500 font-bold uppercase tracking-widest mb-1">Minggu Ini</p>
+                <p class="text-3xl font-black text-blue-500" id="statWeek">0</p>
+            </div>
+            <div class="bg-white rounded-2xl p-5 deep-dark-shadow flex flex-col justify-center items-center">
+                <p class="text-xs text-slate-500 font-bold uppercase tracking-widest mb-1">Terlewat</p>
+                <p class="text-3xl font-black text-rose-500" id="statPast">0</p>
+            </div>
+        </div>
+
+        <!-- Grid Container Tugas -->
+        <div id="tasksContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-start">
+            <!-- Kartu tugas akan dirender di sini via JavaScript -->
+        </div>
+
+        <div id="emptyState" class="hidden text-center py-20 w-full col-span-full">
+            <div class="inline-flex items-center justify-center w-20 h-20 bg-white rounded-full deep-dark-shadow mb-4">
+                <svg class="w-10 h-10 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            </div>
+            <p class="text-slate-500 font-medium">Belum ada tugas yang ditambahkan atau ditemukan.</p>
+        </div>
+    </main>
+
+    <!-- Modal Input Password Admin -->
+    <div id="passwordModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex-col items-center justify-center px-4">
+        <div class="bg-white rounded-3xl p-8 max-w-sm w-full deep-dark-shadow transform scale-95 opacity-0 transition-all duration-300" id="passwordCard">
+            <div class="w-14 h-14 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mb-4 mx-auto">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+            </div>
+            <h2 class="text-2xl font-bold text-center text-slate-800 mb-2">Akses Admin</h2>
+            <p class="text-sm text-center text-slate-500 mb-6">Masukkan PIN untuk mengelola tugas.</p>
+            <input type="password" id="adminPasswordInput" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-4 text-center tracking-[0.5em] text-lg font-bold" placeholder="••••">
+            <p id="passErrorMsg" class="text-rose-500 text-xs text-center mb-4 hidden">Password salah, coba lagi.</p>
+            <div class="flex gap-3">
+                <button onclick="closePasswordModal()" class="flex-1 py-3 bg-white border border-slate-200 text-slate-600 rounded-xl font-medium hover:bg-slate-50 transition-colors">Batal</button>
+                <button onclick="verifyAdminPassword()" class="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 deep-dark-shadow transition-colors">Masuk</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Admin (Form Tambah/Edit Tugas) -->
+    <div id="adminModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex-col items-center justify-center px-4 py-8 overflow-y-auto">
+        <div class="bg-white rounded-3xl w-full max-w-lg deep-dark-shadow my-auto transform scale-95 opacity-0 transition-all duration-300 relative" id="adminCard">
+            
+            <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-3xl">
+                <h2 class="text-xl font-bold text-slate-800" id="modalTitle">Tambah Tugas Baru</h2>
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="openChangePassModal()" class="p-2 text-amber-600 bg-amber-100 hover:bg-amber-200 rounded-full transition-colors active:scale-90" title="Ganti Password">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path></svg>
+                    </button>
+                    <button type="button" onclick="closeAdminModal()" class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-full transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+            </div>
+
+            <form id="taskForm" class="p-6 space-y-5">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Nama Tugas</label>
+                    <input type="text" id="taskTitle" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">Jenis Tugas</label>
+                        <select id="taskType" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 appearance-none">
+                            <option value="PR">Pekerjaan Rumah (PR)</option>
+                            <option value="Proyek">Proyek Kelompok</option>
+                            <option value="Makalah">Makalah</option>
+                            <option value="Hafalan">Hafalan</option>
+                            <option value="Lainnya">Lainnya</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">Guru Mapel</label>
+                        <input type="text" id="taskTeacher" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Waktu Pengumpulan</label>
+                    <div class="relative">
+                        <input type="text" id="taskDate" required placeholder="Pilih tanggal & waktu..." class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer text-slate-800">
+                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                            <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Keterangan Tambahan</label>
+                    <textarea id="taskDesc" rows="3" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"></textarea>
+                </div>
+                <button type="submit" class="w-full py-3.5 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 deep-dark-shadow transition-transform active:scale-[0.98] mt-4">Simpan Tugas</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Ganti Password Kustom -->
+    <div id="changePassModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[60] hidden flex-col items-center justify-center px-4">
+        <div class="bg-white rounded-3xl p-6 max-w-xs w-full deep-dark-shadow text-center">
+            <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path></svg>
+            </div>
+            <h3 class="text-lg font-bold text-slate-800 mb-2">Ganti Password</h3>
+            <input type="text" id="newPassInput" class="w-full px-4 py-2 border border-slate-300 rounded-lg mb-4 text-center focus:ring-2 focus:ring-amber-500 focus:outline-none" placeholder="Masukkan PIN baru">
+            <div class="flex gap-2">
+                <button type="button" onclick="closeChangePassModal()" class="flex-1 py-2 bg-slate-100 text-slate-600 rounded-lg font-medium hover:bg-slate-200">Batal</button>
+                <button type="button" onclick="saveNewPassword()" class="flex-1 py-2 bg-amber-500 text-white rounded-lg font-medium hover:bg-amber-600 deep-dark-shadow">Simpan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Konfirmasi Hapus Kustom -->
+    <div id="deleteConfirmModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[60] hidden flex-col items-center justify-center px-4">
+        <div class="bg-white rounded-3xl p-6 max-w-xs w-full deep-dark-shadow text-center">
+            <div class="w-16 h-16 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+            </div>
+            <h3 class="text-xl font-bold text-slate-800 mb-1">Hapus Tugas?</h3>
+            <p class="text-sm text-slate-500 mb-6">Data yang dihapus tidak dapat dikembalikan lagi.</p>
+            <div class="flex gap-3">
+                <button onclick="closeDeleteModal()" class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl font-medium hover:bg-slate-200 transition-colors">Batal</button>
+                <button onclick="confirmDeleteAction()" class="flex-1 py-3 bg-rose-600 text-white rounded-xl font-medium hover:bg-rose-700 deep-dark-shadow transition-colors">Ya, Hapus</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Notifikasi -->
+    <div id="notifModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex-col items-center justify-center px-4 py-8">
+        <div class="bg-white rounded-3xl w-full max-w-md deep-dark-shadow transform scale-95 opacity-0 transition-all duration-300" id="notifCard">
+            <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-3xl">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </div>
+                    <h2 class="text-lg font-bold text-slate-800">Mendesak (H-1)</h2>
+                </div>
+                <button onclick="closeNotifModal()" class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-full transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="p-2 max-h-[60vh] overflow-y-auto" id="notifList">
+                <!-- Daftar notif dirender di sini -->
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/id.js"></script>
+
+    <script>
+        let tasks = [];
+        let currentEditId = null;
+        let idToDelete = null;
+        let adminPass = 'admin123';
+        
+        // 🔴 MASUKKAN URL WEB APP GOOGLE SCRIPT ANDA DI BAWAH INI:
+        // Contoh: https://script.google.com/macros/s/AKfycb.../exec
+        const API_URL = 'https://script.google.com/macros/s/AKfycbwmFs1-fPelPm5sCXNmtGadri2dAllUKBAEzosAKLPJAhinE26b-fiMYfYP4v7XTgerbw/exec'; 
+
+        // ==========================================
+        // FUNGSI SINKRONISASI DATA (API FETCH)
+        // ==========================================
+        async function fetchAndRenderData() {
+            try {
+                // Tampilkan Loading State sementara (opsional)
+                document.getElementById('tasksContainer').innerHTML = '<p class="col-span-full text-center py-10 text-slate-500 animate-pulse">Menghubungkan ke Database Google Sheets...</p>';
+                
+                // Jika API_URL belum diisi, gunakan LocalStorage (Fallback)
+                if(API_URL === 'MASUKKAN_URL_WEB_APP_ANDA_DISINI') {
+                    console.warn("API URL belum diatur! Menggunakan Local Storage.");
+                    tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+                    adminPass = localStorage.getItem('adminPass') || 'admin123';
+                    renderTasks(); updateStats(); updateNotificationBadge();
+                    return;
+                }
+
+                // Ambil data dari Google Sheets API
+                const response = await fetch(API_URL + '?action=getData');
+                const data = await response.json();
+                
+                tasks = data.tasks || [];
+                adminPass = data.adminPass || 'admin123';
+                
+                renderTasks(); updateStats(); updateNotificationBadge();
+            } catch (error) {
+                console.error("Gagal menarik data:", error);
+                document.getElementById('tasksContainer').innerHTML = '<p class="col-span-full text-center py-10 text-rose-500 font-bold">Gagal terhubung ke Database. Periksa koneksi atau URL API.</p>';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', fetchAndRenderData);
+
+        // API Helper untuk mengirim instruksi (Tambah/Edit/Hapus)
+        function sendDataToAPI(payload) {
+            if(API_URL === 'MASUKKAN_URL_WEB_APP_ANDA_DISINI') {
+                localStorage.setItem('tasks', JSON.stringify(tasks));
+                if(payload.action === 'updatePassword') localStorage.setItem('adminPass', adminPass);
+                return;
+            }
+
+            fetch(API_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            }).catch(err => console.error("Gagal mengirim ke database:", err));
+        }
+
+        // ==========================================
+        // KONFIGURASI KALENDER
+        // ==========================================
+        const liburNasional2026 = [
+            "2026-01-01", "2026-02-17", "2026-03-19", "2026-03-20", "2026-04-03",
+            "2026-04-10", "2026-05-01", "2026-05-14", "2026-06-01", "2026-07-19",
+            "2026-08-17", "2026-09-16", "2026-12-25"
+        ];
+
+        flatpickr("#taskDate", {
+            enableTime: true,
+            dateFormat: "Y-m-d\\TH:i",
+            altInput: true,
+            altFormat: "d F Y - H:i",
+            locale: "id",
+            time_24hr: true,
+            minDate: "today",
+            appendTo: document.body,
+            onDayCreate: function(dObj, dStr, fp, dayElem) {
+                const dateObj = dayElem.dateObj;
+                const formattedDate = fp.formatDate(dateObj, "Y-m-d");
+                if (dateObj.getDay() === 0) dayElem.classList.add("hari-minggu");
+                if (liburNasional2026.includes(formattedDate)) {
+                    dayElem.classList.add("hari-libur");
+                    dayElem.title = "Libur Nasional / Cuti Bersama";
+                }
+            }
+        });
+
+        // ==========================================
+        // FUNGSI TAMBAH / EDIT TUGAS
+        // ==========================================
+        document.getElementById('taskForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const taskData = {
+                id: currentEditId || Date.now().toString(),
+                title: document.getElementById('taskTitle').value.trim(),
+                type: document.getElementById('taskType').value,
+                teacher: document.getElementById('taskTeacher').value.trim(),
+                datetime: document.getElementById('taskDate').value,
+                description: document.getElementById('taskDesc').value.trim()
+            };
+
+            if (currentEditId) {
+                const index = tasks.findIndex(t => t.id === currentEditId);
+                if (index > -1) tasks[index] = taskData;
+                sendDataToAPI({ action: 'updateTask', task: taskData }); // Kirim ke API Google
+            } else {
+                tasks.push(taskData);
+                sendDataToAPI({ action: 'saveTask', task: taskData }); // Kirim ke API Google
+            }
+
+            // Perbarui tampilan seketika (Optimistic UI)
+            renderTasks(); updateStats(); updateNotificationBadge();
+            closeAdminModal();
+        });
+
+        // ==========================================
+        // FUNGSI HAPUS TUGAS
+        // ==========================================
+        function confirmDeleteAction() {
+            if (idToDelete) {
+                // Hapus dari memori lokal sementara
+                tasks = tasks.filter(t => t.id !== idToDelete);
+                
+                // Kirim instruksi hapus ke Spreadsheet
+                sendDataToAPI({ action: 'deleteTask', id: idToDelete });
+                
+                renderTasks(); updateStats(); updateNotificationBadge();
+                closeDeleteModal();
+            }
+        }
+
+        // ==========================================
+        // FUNGSI RENDER (MENAMPILKAN DATA)
+        // ==========================================
+        function renderTasks(searchQuery = '') {
+            const container = document.getElementById('tasksContainer');
+            const emptyState = document.getElementById('emptyState');
+            container.innerHTML = '';
+
+            let filteredTasks = tasks.filter(task => {
+                const q = searchQuery.toLowerCase();
+                return task.title.toLowerCase().includes(q) || 
+                       task.teacher.toLowerCase().includes(q) || 
+                       task.type.toLowerCase().includes(q);
+            });
+
+            const now = new Date();
+
+            // PENGURUTAN: Terdekat di atas, Terlewat di paling bawah
+            filteredTasks.sort((a, b) => {
+                const dateA = new Date(a.datetime);
+                const dateB = new Date(b.datetime);
+                const isPastA = dateA < now;
+                const isPastB = dateB < now;
+
+                if (isPastA && !isPastB) return 1;  
+                if (!isPastA && isPastB) return -1; 
+                return dateA - dateB;
+            });
+
+            if (filteredTasks.length === 0) {
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+
+                filteredTasks.forEach(task => {
+                    const taskDate = new Date(task.datetime);
+                    const timeDiff = taskDate - now;
+                    const hoursLeft = timeDiff / (1000 * 60 * 60);
+                    
+                    let statusBadge = '';
+                    let bgClass = '';
+                    let gradientBg = '';
+                    
+                    if (timeDiff < 0) {
+                        bgClass = 'bg-rose-100'; 
+                        gradientBg = 'from-rose-100 via-rose-100';
+                        statusBadge = '<span class="px-2 py-1 bg-rose-300 text-rose-900 text-[10px] rounded-md font-bold mb-3 inline-block uppercase tracking-wider shadow-sm">Terlewat</span>';
+                    } else if (hoursLeft <= 24) {
+                        bgClass = 'bg-amber-100'; 
+                        gradientBg = 'from-amber-100 via-amber-100';
+                        statusBadge = '<span class="px-2 py-1 bg-amber-200 text-amber-800 text-[10px] rounded-md font-bold mb-3 inline-block uppercase tracking-wider shadow-sm animate-pulse">H-1 Mendesak!</span>';
+                    } else {
+                        bgClass = 'bg-emerald-100'; 
+                        gradientBg = 'from-emerald-100 via-emerald-100';
+                        statusBadge = '<span class="px-2 py-1 bg-emerald-200 text-emerald-800 text-[10px] rounded-md font-bold mb-3 inline-block uppercase tracking-wider shadow-sm select-none pointer-events-none">Aman (H-2+)</span>'; 
+                    }
+
+                    const formattedDate = taskDate.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+                    const formattedTime = taskDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+
+                    const card = document.createElement('div');
+                    card.className = `${bgClass} rounded-2xl p-5 deep-dark-shadow relative overflow-hidden group flex flex-col h-[350px] transition-colors duration-300`;
+                    
+                    card.innerHTML = `
+                        <div class="shrink-0">
+                            ${statusBadge}
+                            <div class="flex justify-between items-start mb-2 gap-2">
+                                <h3 class="font-bold text-lg text-slate-800 leading-tight line-clamp-1" title="${task.title}">${task.title}</h3>
+                                <span class="px-2.5 py-1 bg-white/60 text-slate-800 text-[10px] font-bold rounded-full uppercase tracking-wide shrink-0 border border-slate-200/50">${task.type}</span>
+                            </div>
+                            <p class="text-sm text-slate-600 mb-4 flex items-center gap-1.5 font-medium">
+                                <svg class="w-4 h-4 text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                                <span class="truncate">${task.teacher}</span>
+                            </p>
+                            
+                            <div class="bg-white/50 rounded-xl p-3 mb-3 border border-slate-100/50">
+                                <p class="text-sm text-slate-800 font-semibold flex items-center gap-2">
+                                    <svg class="w-4 h-4 text-slate-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                    ${formattedDate}
+                                </p>
+                                <p class="text-sm text-slate-700 flex items-center gap-2 mt-1">
+                                    <svg class="w-4 h-4 text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    Pukul ${formattedTime} WIB
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex-1 relative">
+                            ${task.description ? `<p class="text-sm text-slate-700 italic line-clamp-3 leading-relaxed">${task.description}</p>` : '<p class="text-sm text-slate-500 italic">Tidak ada keterangan tambahan</p>'}
+                        </div>
+                        
+                        <div class="absolute inset-x-0 bottom-0 p-5 bg-gradient-to-t ${gradientBg} to-transparent flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 translate-y-2 group-hover:translate-y-0">
+                            <button onclick="editTask('${task.id}')" class="flex-1 py-2.5 bg-white text-slate-700 rounded-xl text-sm font-bold hover:bg-slate-50 transition-colors shadow-sm border border-slate-200">Edit</button>
+                            <button onclick="openDeleteModal('${task.id}')" class="flex-1 py-2.5 bg-white text-rose-600 rounded-xl text-sm font-bold hover:bg-rose-50 transition-colors shadow-sm border border-rose-200">Hapus</button>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+            }
+        }
+
+        function filterTasks() { renderTasks(document.getElementById('searchInput').value); }
+
+        function updateStats() {
+            const now = new Date();
+            let urgent = 0, past = 0, week = 0;
+
+            tasks.forEach(task => {
+                const taskDate = new Date(task.datetime);
+                const hoursLeft = (taskDate - now) / (1000 * 60 * 60);
+                if (hoursLeft < 0) past++;
+                else if (hoursLeft <= 24) urgent++;
+                if (hoursLeft > 0 && hoursLeft <= (24 * 7)) week++;
+            });
+
+            document.getElementById('statTotal').innerText = tasks.length;
+            document.getElementById('statUrgent').innerText = urgent;
+            document.getElementById('statPast').innerText = past;
+            document.getElementById('statWeek').innerText = week;
+        }
+
+        function updateNotificationBadge() {
+            const now = new Date();
+            const urgentTasks = tasks.filter(t => {
+                const hrs = (new Date(t.datetime) - now) / (1000 * 60 * 60);
+                return hrs > 0 && hrs <= 24;
+            });
+            const badge = document.getElementById('notifBadge');
+            if (urgentTasks.length > 0) {
+                badge.innerText = urgentTasks.length;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
+        // ==========================================
+        // SISTEM MODAL & PASSWORD ADMIN
+        // ==========================================
+        const passModal = document.getElementById('passwordModal');
+        const passCard = document.getElementById('passwordCard');
+        const adminModal = document.getElementById('adminModal');
+        const adminCard = document.getElementById('adminCard');
+
+        function openAdminGate() {
+            document.getElementById('adminPasswordInput').value = '';
+            document.getElementById('passErrorMsg').classList.add('hidden');
+            passModal.classList.remove('hidden'); passModal.classList.add('flex');
+            setTimeout(() => { passCard.classList.remove('scale-95', 'opacity-0'); }, 10);
+        }
+
+        function closePasswordModal() {
+            passCard.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => { passModal.classList.add('hidden'); passModal.classList.remove('flex'); }, 300);
+        }
+
+        function verifyAdminPassword() {
+            const inputPass = document.getElementById('adminPasswordInput').value.trim();
+            const correctPass = adminPass.toString().trim();
+            
+            if (inputPass === correctPass) {
+                closePasswordModal();
+                setTimeout(openAdminModal, 300);
+            } else {
+                document.getElementById('passErrorMsg').classList.remove('hidden');
+            }
+        }
+
+        function openAdminModal() {
+            currentEditId = null;
+            document.getElementById('modalTitle').innerText = 'Tambah Tugas Baru';
+            document.getElementById('taskForm').reset();
+            document.querySelector("#taskDate")._flatpickr.clear();
+            
+            adminModal.classList.remove('hidden'); adminModal.classList.add('flex');
+            setTimeout(() => { adminCard.classList.remove('scale-95', 'opacity-0'); }, 10);
+        }
+
+        function editTask(id) {
+            const task = tasks.find(t => t.id === id);
+            if (!task) return;
+
+            openAdminGate();
+            const originalVerify = window.verifyAdminPassword;
+            window.verifyAdminPassword = function() {
+                const inputPass = document.getElementById('adminPasswordInput').value.trim();
+                const correctPass = adminPass.toString().trim();
+                
+                if (inputPass === correctPass) {
+                    closePasswordModal();
+                    setTimeout(() => {
+                        currentEditId = id;
+                        document.getElementById('modalTitle').innerText = 'Edit Tugas';
+                        document.getElementById('taskTitle').value = task.title;
+                        document.getElementById('taskType').value = task.type;
+                        document.getElementById('taskTeacher').value = task.teacher;
+                        document.getElementById('taskDesc').value = task.description;
+                        document.querySelector("#taskDate")._flatpickr.setDate(task.datetime);
+                        
+                        adminModal.classList.remove('hidden'); adminModal.classList.add('flex');
+                        setTimeout(() => { adminCard.classList.remove('scale-95', 'opacity-0'); }, 10);
+                    }, 300);
+                    window.verifyAdminPassword = originalVerify; 
+                } else {
+                    document.getElementById('passErrorMsg').classList.remove('hidden');
+                }
+            };
+        }
+
+        function closeAdminModal() {
+            adminCard.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => { adminModal.classList.add('hidden'); adminModal.classList.remove('flex'); }, 300);
+        }
+
+        function openChangePassModal() {
+            document.getElementById('newPassInput').value = '';
+            document.getElementById('changePassModal').classList.remove('hidden');
+            document.getElementById('changePassModal').classList.add('flex');
+        }
+
+        function closeChangePassModal() {
+            document.getElementById('changePassModal').classList.add('hidden');
+            document.getElementById('changePassModal').classList.remove('flex');
+        }
+
+        function saveNewPassword() {
+            const newPass = document.getElementById('newPassInput').value.trim();
+            if(newPass) {
+                adminPass = newPass.toString().trim();
+                sendDataToAPI({ action: 'updatePassword', newPassword: adminPass }); // API
+                closeChangePassModal();
+                alert("Password berhasil diubah secara permanen di Database!");
+            }
+        }
+
+        function openDeleteModal(id) {
+            idToDelete = id;
+            document.getElementById('deleteConfirmModal').classList.remove('hidden');
+            document.getElementById('deleteConfirmModal').classList.add('flex');
+        }
+
+        function closeDeleteModal() {
+            idToDelete = null;
+            document.getElementById('deleteConfirmModal').classList.add('hidden');
+            document.getElementById('deleteConfirmModal').classList.remove('flex');
+        }
+
+        function openNotifModal() {
+            const list = document.getElementById('notifList');
+            list.innerHTML = '';
+            const now = new Date();
+            
+            const urgentTasks = tasks.filter(t => {
+                const hrs = (new Date(t.datetime) - now) / (1000 * 60 * 60);
+                return hrs > 0 && hrs <= 24;
+            });
+
+            if (urgentTasks.length === 0) {
+                list.innerHTML = `<div class="p-4 text-center text-slate-500 bg-white rounded-xl border border-slate-100">Tidak ada tugas mendesak untuk besok. Santai dulu! ☕</div>`;
+            } else {
+                urgentTasks.forEach(task => {
+                    list.innerHTML += `
+                        <div class="p-3 bg-white rounded-xl mb-2 border border-amber-200 shadow-sm flex justify-between items-center">
+                            <div>
+                                <p class="font-bold text-slate-800 text-sm">${task.title}</p>
+                                <p class="text-xs text-slate-500">${task.teacher}</p>
+                            </div>
+                            <span class="text-xs font-bold text-amber-700 bg-amber-100 px-2 py-1 rounded">H-1</span>
+                        </div>
+                    `;
+                });
+            }
+            
+            const modal = document.getElementById('notifModal');
+            const card = document.getElementById('notifCard');
+            modal.classList.remove('hidden'); modal.classList.add('flex');
+            setTimeout(() => { card.classList.remove('scale-95', 'opacity-0'); }, 10);
+        }
+
+        function closeNotifModal() {
+            const modal = document.getElementById('notifModal');
+            const card = document.getElementById('notifCard');
+            card.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => { modal.classList.add('hidden'); modal.classList.remove('flex'); }, 300);
+        }
+    </script>
+</body>
+</html>
